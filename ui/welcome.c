@@ -47,31 +47,12 @@ void UI_DisplayWelcome(void)
 	memset(gStatusLine,  0, sizeof(gStatusLine));
 	UI_DisplayClear();
 
-	if (gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_NONE || gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_FULL_SCREEN) {
-		ST7565_FillScreen(0xFF);
-	} else {
-		memset(WelcomeString0, 0, sizeof(WelcomeString0));
-		memset(WelcomeString1, 0, sizeof(WelcomeString1));
+	// AIR RADIO: fixed branded boot screen (ignores POWER_ON_DISPLAY_MODE)
+	(void)WelcomeString0;
+	(void)WelcomeString1;
+	UI_PrintString("AIR RADIO", 0, 127, 2, 10);
+	UI_PrintStringSmallNormal(Version, 0, 128, 6);
 
-		if (gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_VOLTAGE)
-		{
-			strcpy(WelcomeString0, "VOLTAGE");
-			sprintf(WelcomeString1, "%u.%02uV %u%%",
-				gBatteryVoltageAverage / 100,
-				gBatteryVoltageAverage % 100,
-				BATTERY_VoltsToPercent(gBatteryVoltageAverage));
-		}
-		else
-		{
-			EEPROM_ReadBuffer(0x0EB0, WelcomeString0, 16);
-			EEPROM_ReadBuffer(0x0EC0, WelcomeString1, 16);
-		}
-
-		UI_PrintString(WelcomeString0, 0, 127, 0, 10);
-		UI_PrintString(WelcomeString1, 0, 127, 2, 10);
-		UI_PrintStringSmallNormal(Version, 0, 128, 6);
-
-		ST7565_BlitStatusLine();  // blank status line
-		ST7565_BlitFullScreen();
-	}
+	ST7565_BlitStatusLine();  // blank status line
+	ST7565_BlitFullScreen();
 }

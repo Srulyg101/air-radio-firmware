@@ -143,6 +143,19 @@ void UI_DisplayStatus()
 		x1 = x;
 	}
 
+	{	// AIR RADIO: "GROUP 1" header, centred in the free space of the status line
+		static const char header[] = "GROUP 1";
+		const unsigned int w     = (sizeof(header) - 1) * 7;
+		const unsigned int left  = MAX(x1, 36u);   // after RX/TX, scan, dual-watch slots
+		unsigned int       right = LCD_WIDTH - sizeof(BITMAP_BatteryLevel1);
+		if (gChargingWithTypeC)
+			right -= sizeof(BITMAP_USB_C);
+		if (gSetting_battery_text == 0 && right >= left + w) {
+			UI_PrintStringSmallBufferNormal(header, line + left + (right - left - w) / 2);
+			x1 = left + w;
+		}
+	}
+
 	{	// battery voltage or percentage
 		char         s[8] = "";
 		unsigned int x2 = LCD_WIDTH - sizeof(BITMAP_BatteryLevel1) - 0;
