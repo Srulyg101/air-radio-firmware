@@ -17,6 +17,9 @@
 #include <assert.h>
 #include <string.h>
 #include "air_modes.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
@@ -66,6 +69,10 @@ void GUI_DisplayScreen(void)
 {
 	if (AIRMODES_IsShabbos())
 		return;
+#ifdef ENABLE_MDC1200
+	if (MDC1200_render())
+		return;
+#endif
 	if (gScreenToDisplay != DISPLAY_INVALID) {
 		UI_DisplayFunctions[gScreenToDisplay]();
 	}
