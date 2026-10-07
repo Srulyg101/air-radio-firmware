@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include "air_modes.h"
 
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
@@ -63,6 +64,8 @@ static_assert(ARRAY_SIZE(UI_DisplayFunctions) == DISPLAY_N_ELEM);
 
 void GUI_DisplayScreen(void)
 {
+	if (AIRMODES_IsShabbos())
+		return;
 	if (gScreenToDisplay != DISPLAY_INVALID) {
 		UI_DisplayFunctions[gScreenToDisplay]();
 	}
