@@ -1,0 +1,36 @@
+{
+  "format": "air-radio-groups",
+  "version": 1,
+  "eeprom": {
+    "base": "0x1E00",
+    "recordSize": 8,
+    "slots": 16
+  },
+  "groups": [
+    {
+      "label": "Group 1",
+      "groupId": 1201,
+      "channels": []
+    },
+    {
+      "label": "Group 2",
+      "groupId": 1202,
+      "channels": []
+    },
+    {
+      "label": "Group 3",
+      "groupId": 1203,
+      "channels": []
+    },
+    {
+      "label": "Group 4",
+      "groupId": 1204,
+      "channels": []
+    }
+  ],
+  "notes": [
+    "A channel can belong to multiple groups.",
+    "Labels are programmer-side friendly names; the radio stores channel/group assignments.",
+    "Use only channels 1-200 in the frontend."
+  ]
+}
