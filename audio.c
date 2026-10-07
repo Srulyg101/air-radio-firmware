@@ -34,8 +34,97 @@
 
 BEEP_Type_t gBeepToPlay = BEEP_NONE;
 
+
+static void AUDIO_PlayToneStep(uint16_t frequency, uint16_t duration, uint16_t gap)
+{
+	BK4819_PlayTone(frequency, true);
+	SYSTEM_DelayMs(2);
+	AUDIO_AudioPathOn();
+	BK4819_ExitTxMute();
+	SYSTEM_DelayMs(duration);
+	BK4819_EnterTxMute();
+	if (gap) SYSTEM_DelayMs(gap);
+}
+
+static bool AUDIO_PlayMdcAlert(BEEP_Type_t beep)
+{
+	if (beep < BEEP_MDC_CALL_ALERT || beep > BEEP_MDC_REMOTE_MONITOR)
+		return false;
+
+	if (gCurrentFunction == FUNCTION_RECEIVE || gCurrentFunction == FUNCTION_MONITOR)
+		return true;
+
+	AUDIO_AudioPathOff();
+	if (gCurrentFunction == FUNCTION_POWER_SAVE && gRxIdleMode)
+		BK4819_RX_TurnOn();
+	SYSTEM_DelayMs(15);
+
+	const uint16_t tone_config = BK4819_ReadRegister(BK4819_REG_71);
+
+	switch (beep) {
+	case BEEP_MDC_CALL_ALERT:
+		// Classic public-safety page feel: rising three-note page, repeated.
+		for (unsigned int r = 0; r < 2; r++) {
+			AUDIO_PlayToneStep(660, 90, 25);
+			AUDIO_PlayToneStep(880, 90, 25);
+			AUDIO_PlayToneStep(1100, 180, 90);
+		}
+		break;
+	case BEEP_MDC_EMERGENCY:
+		// Urgent alternating alarm.
+		for (unsigned int r = 0; r < 4; r++) {
+			AUDIO_PlayToneStep(1200, 90, 20);
+			AUDIO_PlayToneStep(650, 90, 20);
+		}
+		break;
+	case BEEP_MDC_RADIO_CHECK:
+		AUDIO_PlayToneStep(900, 55, 20);
+		AUDIO_PlayToneStep(1200, 90, 0);
+		break;
+	case BEEP_MDC_STATUS:
+		AUDIO_PlayToneStep(700, 55, 20);
+		AUDIO_PlayToneStep(950, 70, 0);
+		break;
+	case BEEP_MDC_MESSAGE:
+		AUDIO_PlayToneStep(880, 55, 20);
+		AUDIO_PlayToneStep(1050, 55, 20);
+		AUDIO_PlayToneStep(880, 100, 0);
+		break;
+	case BEEP_MDC_PTT_ID:
+		AUDIO_PlayToneStep(1000, 45, 0);
+		break;
+	case BEEP_MDC_POST_ID:
+		AUDIO_PlayToneStep(1050, 45, 12);
+		AUDIO_PlayToneStep(780, 55, 0);
+		break;
+	case BEEP_MDC_REMOTE_MONITOR:
+		AUDIO_PlayToneStep(520, 45, 25);
+		AUDIO_PlayToneStep(520, 45, 0);
+		break;
+	default:
+		break;
+	}
+
+	BK4819_EnterTxMute();
+	SYSTEM_DelayMs(15);
+	AUDIO_AudioPathOff();
+	BK4819_TurnsOffTones_TurnsOnRX();
+	SYSTEM_DelayMs(5);
+	BK4819_WriteRegister(BK4819_REG_71, tone_config);
+	if (gEnableSpeaker)
+		AUDIO_AudioPathOn();
+	if (gCurrentFunction == FUNCTION_POWER_SAVE && gRxIdleMode)
+		BK4819_Sleep();
+#ifdef ENABLE_VOX
+	gVoxResumeCountdown = 80;
+#endif
+	return true;
+}
+
 void AUDIO_PlayBeep(BEEP_Type_t Beep)
 {
+	if (AUDIO_PlayMdcAlert(Beep))
+		return;
 
 	if (Beep != BEEP_880HZ_60MS_TRIPLE_BEEP &&
 	    Beep != BEEP_500HZ_60MS_DOUBLE_BEEP &&
