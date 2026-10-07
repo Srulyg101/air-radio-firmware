@@ -293,6 +293,19 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 		if (IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) { // user is entering channel number
 
+			if (gInputBoxIndex == 3 &&
+			    gInputBox[0] == 1 && gInputBox[1] == 0 && gInputBox[2] == 1) {
+				// 101 is an on-air alert command, not memory channel 101.
+				gInputBoxIndex = 0;
+				strcpy(gDTMF_InputBox, "101");
+				gDTMF_InputBox_Index = 3;
+				gDTMF_InputMode = true;
+				GENERIC_Key_PTT(true);
+				GENERIC_Key_PTT(false);
+				gRequestDisplayScreen = DISPLAY_MAIN;
+				return;
+			}
+
 			if (gInputBoxIndex != 3) {
 				#ifdef ENABLE_VOICE
 					gAnotherVoiceID   = (VOICE_ID_t)Key;
