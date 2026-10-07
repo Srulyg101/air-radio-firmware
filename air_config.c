@@ -1,8 +1,8 @@
 #include <string.h>
 #include "air_config.h"
-#include "driver/eeprom.h"
+#include "air_nv.h"
 
-#define AIRCFG_ADDR 0x1DF0u
+#define AIRCFG_ADDR 240u
 #define AIRCFG_MAGIC 0xA7u
 #define AIRCFG_VERSION 1u
 
@@ -19,13 +19,12 @@ static AirConfigRecord cfg;
 
 static void save(void)
 {
-    EEPROM_WriteBuffer(AIRCFG_ADDR, (uint8_t *)&cfg);
-    EEPROM_WriteBuffer(AIRCFG_ADDR + 8, ((uint8_t *)&cfg) + 8);
+    AIRNV_Write(AIRCFG_ADDR, &cfg, sizeof(cfg));
 }
 
 void AIRCFG_Init(void)
 {
-    EEPROM_ReadBuffer(AIRCFG_ADDR, &cfg, sizeof(cfg));
+    AIRNV_Read(AIRCFG_ADDR, &cfg, sizeof(cfg));
     if (cfg.magic != AIRCFG_MAGIC || cfg.version != AIRCFG_VERSION ||
         cfg.mdc_id == 0 || cfg.mdc_id == 0xFFFFu || cfg.mode > 2 || cfg.shabbos > 1) {
         memset(&cfg, 0, sizeof(cfg));
