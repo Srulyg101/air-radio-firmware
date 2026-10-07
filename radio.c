@@ -33,6 +33,9 @@
 #include "functions.h"
 #include "helper/battery.h"
 #include "misc.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 #include "radio.h"
 #include "settings.h"
 #include "ui/menu.h"
@@ -694,7 +697,14 @@ void RADIO_SetupRegisters(bool switchToForeground)
 	BK4819_EnableDTMF();
 	InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
 
-	RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
+	RADIO_SetupAGC(false, false);
+
+#ifdef ENABLE_MDC1200
+	MDC1200_enable_rx(true);
+	InterruptMask |= BK4819_REG_3F_FSK_RX_SYNC |
+	                 BK4819_REG_3F_FSK_RX_FINISHED |
+	                 BK4819_REG_3F_FSK_FIFO_ALMOST_FULL;
+#endif
 
 	// enable/disable BK4819 selected interrupts
 	BK4819_WriteRegister(BK4819_REG_3F, InterruptMask);
