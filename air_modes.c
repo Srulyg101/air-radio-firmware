@@ -3,6 +3,7 @@
 #include "air_config.h"
 #include "audio.h"
 #include "driver/backlight.h"
+#include "driver/bk4819.h"
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
@@ -74,8 +75,11 @@ bool AIRMODES_HandleLocalCode(const char *code)
 
     if (strcmp(code, "99") == 0) {
         AIRCFG_SetShabbos(!AIRCFG_GetShabbos());
-        if (AIRCFG_GetShabbos())
+        if (AIRCFG_GetShabbos()) {
             BACKLIGHT_TurnOff();
+            BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, false);
+            BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+        }
         gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
         gUpdateStatus = true;
         gUpdateDisplay = true;
