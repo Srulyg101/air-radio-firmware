@@ -26,6 +26,7 @@
 #endif
 #include "app/app.h"
 #include "air_modes.h"
+#include "air_groups.h"
 #ifdef ENABLE_MDC1200
 #include "mdc1200.h"
 #endif
@@ -434,8 +435,13 @@ void APP_StartListening(FUNCTION_Type_t function)
 	// clear the other vfo's rssi level (to hide the antenna symbol)
 	gVFO_RSSI_bar_level[!vfo] = 0;
 
-	AUDIO_AudioPathOn();
-	gEnableSpeaker = true;
+	if (AIRGROUP_ShouldUnmute(gRxVfo->CHANNEL_SAVE)) {
+		AUDIO_AudioPathOn();
+		gEnableSpeaker = true;
+	} else {
+		AUDIO_AudioPathOff();
+		gEnableSpeaker = false;
+	}
 
 	if (gSetting_backlight_on_tx_rx & BACKLIGHT_ON_TR_RX) {
 		BACKLIGHT_TurnOn();
