@@ -35,6 +35,9 @@
 #include "ui/helper.h"
 #include "ui/inputbox.h"
 #include "ui/main.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 #include "ui/ui.h"
 
 center_line_t center_line = CENTER_LINE_NONE;
@@ -310,6 +313,9 @@ void UI_DisplayMain(void)
 
 	// clear the screen
 	UI_DisplayClear();
+#ifdef ENABLE_MDC1200
+	if (MDC1200_render()) return;
+#endif
 
 	if(gLowBattery && !gLowBatteryConfirmed) {
 		UI_DisplayPopup("LOW BATTERY");
