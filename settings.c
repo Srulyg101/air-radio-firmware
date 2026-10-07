@@ -666,6 +666,11 @@ void SETTINGS_SaveChannelName(uint8_t channel, const char * name)
 {
 	uint16_t offset = channel * 16;
 	uint8_t buf[16] = {0};
+
+	// Preserve bytes 10..15. Air Radio uses these otherwise-unused bytes
+	// as private persistent storage, while bytes 0..9 remain the channel name.
+	EEPROM_ReadBuffer(0x0F58 + offset, buf + 8, 8);
+	memset(buf, 0, 10);
 	memcpy(buf, name, MIN(strlen(name), 10u));
 	EEPROM_WriteBuffer(0x0F50 + offset, buf);
 	EEPROM_WriteBuffer(0x0F58 + offset, buf + 8);
