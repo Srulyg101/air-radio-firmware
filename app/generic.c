@@ -25,6 +25,10 @@
 #endif
 
 #include "app/generic.h"
+#include "air_modes.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 #include "app/menu.h"
 #include "app/scanner.h"
 #include "audio.h"
@@ -126,6 +130,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 				gRequestDisplayScreen = DISPLAY_MAIN;
 		}
 
+		AIRMODES_AfterPtt();
 		return;
 	}
 
@@ -181,6 +186,20 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 		if (gDTMF_InputBox_Index < sizeof(gDTMF_InputBox))
 			gDTMF_InputBox[gDTMF_InputBox_Index] = 0;             // NULL term the string
 
+		// Air Radio local keypad commands are executed locally and never transmitted as DTMF.
+		if (AIRMODES_HandleLocalCode(gDTMF_InputBox)
+#ifdef ENABLE_MDC1200
+			|| MDC1200_handle_local_code(gDTMF_InputBox)
+#endif
+		) {
+			gDTMF_PreviousIndex = 0;
+			DTMF_clear_input_box();
+			gPttWasReleased = true;
+			gUpdateStatus = true;
+			gUpdateDisplay = true;
+			return;
+		}
+
 #ifdef ENABLE_DTMF_CALLING
 		// append our DTMF ID to the inputted DTMF code -
 		//  IF the user inputted code is exactly 3 digits long and D-DCD is enabled
@@ -200,6 +219,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 	DTMF_clear_input_box();
 
 start_tx:
+	AIRMODES_BeforePtt();
 	// request start TX
 	gFlagPrepareTX = true;
 	goto done;
