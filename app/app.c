@@ -25,6 +25,10 @@
 	#include "app/aircopy.h"
 #endif
 #include "app/app.h"
+#include "air_modes.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
 #ifdef ENABLE_FLASHLIGHT
@@ -591,6 +595,9 @@ static void CheckRadioInterrupts(void)
 		} interrupts;
 
 		interrupts.__raw = BK4819_ReadRegister(BK4819_REG_02);
+#ifdef ENABLE_MDC1200
+		MDC1200_process_rx(interrupts.__raw);
+#endif
 
 		// 0 = no phase shift
 		// 1 = 120deg phase shift
@@ -682,7 +689,7 @@ static void CheckRadioInterrupts(void)
 
 		if (interrupts.sqlLost) {
 			g_SquelchLost = true;
-			BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
+			if (!AIRMODES_IsShabbos()) BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
 		}
 
 		if (interrupts.sqlFound) {
@@ -1451,6 +1458,10 @@ void APP_TimeSlice500ms(void)
 #endif
 	}
 
+#ifdef ENABLE_MDC1200
+	MDC1200_time_slice_500ms();
+#endif
+
 	BATTERY_TimeSlice500ms();
 	SCANNER_TimeSlice500ms();
 	UI_MAIN_TimeSlice500ms();
@@ -1557,7 +1568,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 	else { // key pressed or held
 		const int m = UI_MENU_GetCurrentMenuId();
 		if 	(	//not when PTT and the backlight shouldn't turn on on TX
-				!(Key == KEY_PTT && !(gSetting_backlight_on_tx_rx & BACKLIGHT_ON_TR_TX))
+				!AIRMODES_IsShabbos() && !(Key == KEY_PTT && !(gSetting_backlight_on_tx_rx & BACKLIGHT_ON_TR_TX))
 				// not in the backlight menu
 				&& !(gScreenToDisplay == DISPLAY_MENU && ( m == MENU_ABR || m == MENU_ABR_MAX || m == MENU_ABR_MIN))
 			)
