@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include "air_groups.h"
 #include "audio.h"
-#include "driver/eeprom.h"
+#include "air_nv.h"
 #include "misc.h"
 #include "radio.h"
 #include "mdc1200.h"
 
-#define AIRGROUP_BASE 0x1E00u
+#define AIRGROUP_BASE 256u
 #define AIRGROUP_MAGIC 0x47u
 #define AIRGROUP_OPEN_ARG 0xA1u
 #define AIRGROUP_CLOSE_ARG 0xA0u
@@ -27,7 +27,7 @@ static uint16_t open_mask;
 static bool get_profile(unsigned int slot, AirGroupProfile *p)
 {
     if (slot >= AIRGROUP_MAX_PROFILES || !p) return false;
-    EEPROM_ReadBuffer(AIRGROUP_BASE + slot * 8u, p, sizeof(*p));
+    AIRNV_Read(AIRGROUP_BASE + slot * 8u, p, sizeof(*p));
     return p->magic == AIRGROUP_MAGIC && p->enabled == 1 &&
            p->group_id != 0 && p->group_id != 0xFFFFu;
 }
@@ -35,7 +35,7 @@ static bool get_profile(unsigned int slot, AirGroupProfile *p)
 static void save_profile(unsigned int slot, const AirGroupProfile *p)
 {
     if (slot >= AIRGROUP_MAX_PROFILES || !p) return;
-    EEPROM_WriteBuffer(AIRGROUP_BASE + slot * 8u, (uint8_t *)p);
+    AIRNV_Write(AIRGROUP_BASE + slot * 8u, p, sizeof(*p));
 }
 
 static int find_profile(uint8_t channel, uint16_t group_id)
@@ -80,7 +80,7 @@ static bool remove_profile(uint8_t channel, uint16_t group_id)
     if (slot < 0) return false;
     uint8_t blank[8];
     memset(blank, 0xFF, sizeof(blank));
-    EEPROM_WriteBuffer(AIRGROUP_BASE + (unsigned int)slot * 8u, blank);
+    AIRNV_Write(AIRGROUP_BASE + (unsigned int)slot * 8u, blank, sizeof(blank));
     open_mask &= ~(1u << slot);
     return true;
 }
