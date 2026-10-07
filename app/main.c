@@ -43,6 +43,25 @@
 #include "ui/ui.h"
 #include <stdlib.h>
 
+
+static uint8_t gAirOpsMode = 0; // 0=normal, 1=2/1 (dual watch, TX lower), 2=2/3 (TX lower; UP+PTT TX upper)
+static bool gAirOpsUpperOverride = false;
+
+static void AIR_SetOpsMode(uint8_t mode)
+{
+	gAirOpsMode = mode;
+	gAirOpsUpperOverride = false;
+	// Lower VFO (B / channel 2) is the normal transmit side.
+	gEeprom.TX_VFO = 1;
+	gEeprom.DUAL_WATCH = DUAL_WATCH_CHAN_B;
+	gEeprom.CROSS_BAND_RX_TX = CROSS_BAND_OFF;
+	gRequestSaveSettings = true;
+	gRequestSaveVFO = true;
+	gFlagResetVfos = true;
+	gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
+	gBeepToPlay = (mode == 1) ? BEEP_500HZ_60MS_DOUBLE_BEEP : BEEP_880HZ_60MS_TRIPLE_BEEP;
+}
+
 void toggle_chan_scanlist(void)
 {	// toggle the selected channels scanlist setting
 
@@ -292,6 +311,18 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		gRequestDisplayScreen = DISPLAY_MAIN;
 
 		if (IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) { // user is entering channel number
+
+			if (gInputBoxIndex == 3 && gInputBox[0] == 2 && gInputBox[1] == 0 && gInputBox[2] == 1) {
+				gInputBoxIndex = 0;
+				AIR_SetOpsMode(1); // 201 = 2/1
+				return;
+			}
+
+			if (gInputBoxIndex == 3 && gInputBox[0] == 2 && gInputBox[1] == 0 && gInputBox[2] == 3) {
+				gInputBoxIndex = 0;
+				AIR_SetOpsMode(2); // 203 = 2/3
+				return;
+			}
 
 			if (gInputBoxIndex == 3 &&
 			    gInputBox[0] == 1 && gInputBox[1] == 0 && gInputBox[2] == 1) {
@@ -731,6 +762,16 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 			MAIN_Key_MENU(bKeyPressed, bKeyHeld);
 			break;
 		case KEY_UP:
+			// In 2/3 mode, holding UP arms the upper/main VFO for the next PTT.
+			if (gAirOpsMode == 2 && bKeyPressed) {
+				gAirOpsUpperOverride = true;
+				gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+				break;
+			}
+			if (gAirOpsMode == 2 && !bKeyPressed) {
+				gAirOpsUpperOverride = false;
+				break;
+			}
 			MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
 			break;
 		case KEY_DOWN:
@@ -746,7 +787,16 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 			GENERIC_Key_F(bKeyPressed, bKeyHeld);
 			break;
 		case KEY_PTT:
+			if (gAirOpsMode == 2 && bKeyPressed && gAirOpsUpperOverride) {
+				gEeprom.TX_VFO = 0;
+				RADIO_SelectVfos();
+			}
 			GENERIC_Key_PTT(bKeyPressed);
+			if (gAirOpsMode == 2 && !bKeyPressed && gEeprom.TX_VFO != 1) {
+				gEeprom.TX_VFO = 1;
+				RADIO_SelectVfos();
+				RADIO_SetupRegisters(true);
+			}
 			break;
 		default:
 			if (!bKeyHeld && bKeyPressed)
