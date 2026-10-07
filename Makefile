@@ -14,6 +14,7 @@ ENABLE_ALARM                  ?= 0
 ENABLE_TX1750                 ?= 0
 ENABLE_PWRON_PASSWORD         ?= 1
 ENABLE_DTMF_CALLING           ?= 1
+ENABLE_MDC1200                ?= 1
 ENABLE_FLASHLIGHT             ?= 1
 
 # ---- CUSTOM MODS ----
@@ -134,6 +135,11 @@ ifeq ($(ENABLE_UART),1)
 endif
 ifeq ($(ENABLE_AM_FIX), 1)
 	OBJS += am_fix.o
+endif
+OBJS += air_config.o
+OBJS += air_modes.o
+ifeq ($(ENABLE_MDC1200),1)
+OBJS += mdc1200.o
 endif
 OBJS += audio.o
 OBJS += bitmaps.o
@@ -364,6 +370,9 @@ ifeq ($(ENABLE_SCAN_RANGES),1)
 endif
 ifeq ($(ENABLE_DTMF_CALLING),1)
 	CFLAGS  += -DENABLE_DTMF_CALLING
+endif
+ifeq ($(ENABLE_MDC1200),1)
+	CFLAGS  += -DENABLE_MDC1200
 endif
 ifeq ($(ENABLE_AGC_SHOW_DATA),1)
 	CFLAGS  += -DENABLE_AGC_SHOW_DATA
