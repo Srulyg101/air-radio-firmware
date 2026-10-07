@@ -138,6 +138,7 @@ ifeq ($(ENABLE_AM_FIX), 1)
 endif
 OBJS += air_config.o
 OBJS += air_modes.o
+OBJS += air_groups.o
 ifeq ($(ENABLE_MDC1200),1)
 OBJS += mdc1200.o
 endif
