@@ -21,6 +21,7 @@
 	#include "app/fm.h"
 #endif
 #include "audio.h"
+#include "air_modes.h"
 #include "bsp/dp32g030/gpio.h"
 #include "dcs.h"
 #include "driver/backlight.h"
@@ -185,7 +186,7 @@ void FUNCTION_Transmit()
 	RADIO_SetTxParameters();
 
 	// turn the RED LED on
-	BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true);
+	if (!AIRMODES_IsShabbos()) BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true); else BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, false);
 
 	DTMF_Reply();
 
@@ -219,7 +220,7 @@ void FUNCTION_Transmit()
 	else
 		BK4819_DisableScramble();
 
-	if (gSetting_backlight_on_tx_rx & BACKLIGHT_ON_TR_TX) {
+	if (!AIRMODES_IsShabbos() && (gSetting_backlight_on_tx_rx & BACKLIGHT_ON_TR_TX)) {
 		BACKLIGHT_TurnOn();
 	}
 }
