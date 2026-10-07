@@ -25,6 +25,10 @@
 #endif
 #include "app/generic.h"
 #include "app/main.h"
+#include "air_modes.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 #include "app/scanner.h"
 
 #ifdef ENABLE_SPECTRUM
@@ -251,6 +255,10 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 			break;
 
 		case KEY_9:
+#ifdef ENABLE_MDC1200
+			MDC1200_open_log();
+			if (MDC1200_is_overlay_active()) break;
+#endif
 			if (RADIO_CheckValidChannel(gEeprom.CHAN_1_CALL, false, 0)) {
 				gEeprom.MrChannel[Vfo]     = gEeprom.CHAN_1_CALL;
 				gEeprom.ScreenChannel[Vfo] = gEeprom.CHAN_1_CALL;
@@ -701,6 +709,11 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 
 void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
+	AIRMODES_ObserveKey(Key, bKeyPressed, bKeyHeld);
+#ifdef ENABLE_MDC1200
+	if (MDC1200_handle_key(Key, bKeyPressed, bKeyHeld))
+		return;
+#endif
 #ifdef ENABLE_FMRADIO
 	if (gFmRadioMode && Key != KEY_PTT && Key != KEY_EXIT) {
 		if (!bKeyHeld && bKeyPressed)
