@@ -1529,6 +1529,16 @@ static void ALARM_Off(void)
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
+	AIRMODES_ObserveKey(Key, bKeyPressed, bKeyHeld);
+#ifdef ENABLE_MDC1200
+	if (Key != KEY_PTT && MDC1200_handle_key(Key, bKeyPressed, bKeyHeld)) {
+		if (gBeepToPlay != BEEP_NONE) {
+			AUDIO_PlayBeep(gBeepToPlay);
+			gBeepToPlay = BEEP_NONE;
+		}
+		return;
+	}
+#endif
 	if (Key == KEY_EXIT && !BACKLIGHT_IsOn() && gEeprom.BACKLIGHT_TIME > 0)
 	{	// just turn the light on for now so the user can see what's what
 		BACKLIGHT_TurnOn();
