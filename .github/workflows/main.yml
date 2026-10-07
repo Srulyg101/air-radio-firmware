@@ -2,10 +2,10 @@ name: Build firmware
 
 on:
   push:
-    branches: [air-radio, air-radio-lean]
+    branches: [air-radio, air-radio-lean, feature/mdc1200-reader]
     tags: ['v*']
   pull_request:
-    branches: [air-radio, air-radio-lean]
+    branches: [air-radio, air-radio-lean, feature/mdc1200-reader]
   workflow_dispatch:
 
 # Least privilege by default; the release job elevates only for tag pushes.
