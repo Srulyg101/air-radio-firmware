@@ -253,8 +253,9 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 			break;
 
 		case MENU_AM:
-			*pMin = 0;
-			*pMax = ARRAY_SIZE(gModulationStr) - 1;
+			// Air Radio is FM-only. AM/USB modulation selection is removed.
+			*pMin = MODULATION_FM;
+			*pMax = MODULATION_FM;
 			break;
 
 		case MENU_SCR:
@@ -695,7 +696,8 @@ void MENU_AcceptSetting(void)
 			break;
 
 		case MENU_AM:
-			gTxVfo->Modulation     = gSubMenuSelection;
+			// Air Radio is FM-only.
+			gTxVfo->Modulation = MODULATION_FM;
 			gRequestSaveChannel = 1;
 			return;
 
