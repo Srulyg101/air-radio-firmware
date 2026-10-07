@@ -47,6 +47,7 @@
 #include "helper/boot.h"
 #include "air_config.h"
 #include "air_modes.h"
+#include "air_groups.h"
 #ifdef ENABLE_MDC1200
 #include "mdc1200.h"
 #endif
@@ -107,6 +108,7 @@ void Main(void)
 
 	RADIO_SelectVfos();
 	AIRMODES_Init();
+	AIRGROUP_Init();
 #ifdef ENABLE_MDC1200
 	MDC1200_init();
 #endif
