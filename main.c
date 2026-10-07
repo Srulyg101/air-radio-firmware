@@ -45,6 +45,11 @@
 
 #include "helper/battery.h"
 #include "helper/boot.h"
+#include "air_config.h"
+#include "air_modes.h"
+#ifdef ENABLE_MDC1200
+#include "mdc1200.h"
+#endif
 
 #include "ui/lock.h"
 #include "ui/welcome.h"
@@ -93,6 +98,7 @@ void Main(void)
 	BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
 
 	SETTINGS_InitEEPROM();
+	AIRCFG_Init();
 	SETTINGS_WriteBuildOptions();
 	SETTINGS_LoadCalibration();
 
@@ -100,6 +106,10 @@ void Main(void)
 	RADIO_ConfigureChannel(1, VFO_CONFIGURE_RELOAD);
 
 	RADIO_SelectVfos();
+	AIRMODES_Init();
+#ifdef ENABLE_MDC1200
+	MDC1200_init();
+#endif
 
 	RADIO_SetupRegisters(true);
 
