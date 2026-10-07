@@ -1,6 +1,7 @@
 #include <string.h>
 #include "mdc1200.h"
 #include "air_config.h"
+#include "air_groups.h"
 #include "audio.h"
 #include "driver/bk4819.h"
 #include "driver/eeprom.h"
@@ -288,10 +289,24 @@ static void record_event(uint16_t id, uint8_t op, uint8_t arg)
     mdc1200_rx_ready_tick_500ms = 12;
     gUpdateDisplay = true;
 
+    AIRGROUP_OnMdcPacket(op, arg, id);
+
     if (op == 0x35 && arg == 0x89)
-        gBeepToPlay = BEEP_880HZ_200MS;
+        gBeepToPlay = BEEP_MDC_CALL_ALERT;
     else if (op == 0x00 && arg == 0x81)
-        gBeepToPlay = BEEP_880HZ_60MS_TRIPLE_BEEP;
+        gBeepToPlay = BEEP_MDC_EMERGENCY;
+    else if (op == 0x63 && arg == 0x85)
+        gBeepToPlay = BEEP_MDC_RADIO_CHECK;
+    else if (op == 0x46)
+        gBeepToPlay = BEEP_MDC_STATUS;
+    else if (op == 0x47 && arg != 0xA1 && arg != 0xA0)
+        gBeepToPlay = BEEP_MDC_MESSAGE;
+    else if (op == 0x01 && arg == 0x80)
+        gBeepToPlay = BEEP_MDC_PTT_ID;
+    else if (op == 0x01 && arg == 0x00)
+        gBeepToPlay = BEEP_MDC_POST_ID;
+    else if (op == 0x11 && arg == 0x8A)
+        gBeepToPlay = BEEP_MDC_REMOTE_MONITOR;
 }
 
 static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *op, uint8_t *arg, uint16_t *id)
@@ -482,6 +497,21 @@ bool MDC1200_send_call_alert(void)
     }
     return ok;
 }
+
+bool MDC1200_send_group_control(uint16_t group_id, bool open)
+{
+    if (group_id == 0 || group_id == 0xFFFFu) return false;
+    const uint8_t arg = open ? 0xA1u : 0xA0u;
+    const bool ok = send_packet(0x47u, arg, group_id);
+    if (ok) {
+        mdc1200_op = 0x47u;
+        mdc1200_arg = arg;
+        mdc1200_unit_id = group_id;
+        record_event(group_id, 0x47u, arg);
+    }
+    return ok;
+}
+
 
 static int hex_digit(char c)
 {
