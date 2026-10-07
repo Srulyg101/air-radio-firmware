@@ -28,6 +28,7 @@
 #include "driver/systick.h"
 #include "functions.h"
 #include "misc.h"
+#include "radio.h"
 #include "settings.h"
 #include "ui/ui.h"
 
@@ -51,8 +52,12 @@ static bool AUDIO_PlayMdcAlert(BEEP_Type_t beep)
 	if (beep < BEEP_MDC_CALL_ALERT || beep > BEEP_MDC_REMOTE_MONITOR)
 		return false;
 
-	if (gCurrentFunction == FUNCTION_RECEIVE || gCurrentFunction == FUNCTION_MONITOR)
-		return true;
+	const bool was_rx = (gCurrentFunction == FUNCTION_RECEIVE ||
+	                     gCurrentFunction == FUNCTION_INCOMING ||
+	                     gCurrentFunction == FUNCTION_MONITOR);
+
+	if (was_rx)
+		BK4819_SetAF(BK4819_AF_MUTE);
 
 	AUDIO_AudioPathOff();
 	if (gCurrentFunction == FUNCTION_POWER_SAVE && gRxIdleMode)
@@ -111,6 +116,8 @@ static bool AUDIO_PlayMdcAlert(BEEP_Type_t beep)
 	BK4819_TurnsOffTones_TurnsOnRX();
 	SYSTEM_DelayMs(5);
 	BK4819_WriteRegister(BK4819_REG_71, tone_config);
+	if (was_rx)
+		RADIO_SetModulation(gRxVfo->Modulation);
 	if (gEnableSpeaker)
 		AUDIO_AudioPathOn();
 	if (gCurrentFunction == FUNCTION_POWER_SAVE && gRxIdleMode)
