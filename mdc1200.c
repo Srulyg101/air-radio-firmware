@@ -232,8 +232,7 @@ static void contact_save(uint16_t id, const char *name)
         if (n > sizeof(rec.name)) n = sizeof(rec.name);
         memcpy(rec.name, name, n);
     }
-    EEPROM_WriteBuffer(MDC_CONTACT_BASE + slot * 16u, (uint8_t *)&rec);
-    EEPROM_WriteBuffer(MDC_CONTACT_BASE + slot * 16u + 8u, ((uint8_t *)&rec) + 8);
+    AIRNV_Write(MDC_CONTACT_BASE + slot * 16u, &rec, sizeof(rec));
 }
 
 const char *MDC1200_event_name(uint8_t op, uint8_t arg)
