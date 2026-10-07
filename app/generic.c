@@ -26,6 +26,7 @@
 
 #include "app/generic.h"
 #include "air_modes.h"
+#include "air_groups.h"
 #ifdef ENABLE_MDC1200
 #include "mdc1200.h"
 #endif
@@ -188,6 +189,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 
 		// Air Radio local keypad commands are executed locally and never transmitted as DTMF.
 		if (AIRMODES_HandleLocalCode(gDTMF_InputBox)
+			|| AIRGROUP_HandleLocalCode(gDTMF_InputBox)
 #ifdef ENABLE_MDC1200
 			|| MDC1200_handle_local_code(gDTMF_InputBox)
 #endif
