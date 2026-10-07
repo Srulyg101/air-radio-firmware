@@ -366,7 +366,7 @@ void MDC1200_enable_rx(bool enable)
     BK4819_WriteRegister(BK4819_REG_5A, ((uint16_t)sync_xor[1] << 8) | sync_xor[2]);
     BK4819_WriteRegister(BK4819_REG_5B, ((uint16_t)sync_xor[3] << 8) | sync_xor[4]);
     BK4819_WriteRegister(BK4819_REG_5C, 0x5625);
-    BK4819_WriteRegister(BK4819_REG_5E, (64u << 3) | 1u);
+    BK4819_WriteRegister((BK4819_REGISTER_t)0x5E, (64u << 3) | 1u);
     BK4819_WriteRegister(BK4819_REG_5D, ((MDC1200_FEC_K * 2 - 1u) << 8));
     BK4819_WriteRegister(BK4819_REG_59, (1u << 15) | (1u << 14) | reg59);
     BK4819_WriteRegister(BK4819_REG_59, (1u << 12) | reg59);
@@ -388,7 +388,7 @@ void MDC1200_process_rx(uint16_t interrupt_bits)
     }
 
     if (interrupt_bits & BK4819_REG_02_FSK_FIFO_ALMOST_FULL) {
-        const unsigned int count = BK4819_ReadRegister(BK4819_REG_5E) & 7u;
+        const unsigned int count = BK4819_ReadRegister((BK4819_REGISTER_t)0x5E) & 7u;
         for (unsigned int i = 0; i < count; i++) {
             const uint16_t word = BK4819_ReadRegister(BK4819_REG_5F) ^ (rx_sync_negative ? 0xFFFFu : 0u);
             if (rx_index < sizeof(rx_buffer)) rx_buffer[rx_index++] = word & 0xFF;
@@ -423,12 +423,12 @@ static bool send_packet(uint8_t op, uint8_t arg, uint16_t id)
 
     const uint16_t r3f = BK4819_ReadRegister(BK4819_REG_3F);
     const uint16_t r51 = BK4819_ReadRegister(BK4819_REG_51);
-    const uint16_t r40 = BK4819_ReadRegister(BK4819_REG_40);
+    const uint16_t r40 = BK4819_ReadRegister((BK4819_REGISTER_t)0x40);
     const uint16_t r2b = BK4819_ReadRegister(BK4819_REG_2B);
 
     BK4819_SetAF(BK4819_AF_MUTE);
     BK4819_WriteRegister(BK4819_REG_51, 0);
-    BK4819_WriteRegister(BK4819_REG_40, (r40 & 0xF000u) | 850u);
+    BK4819_WriteRegister((BK4819_REGISTER_t)0x40, (r40 & 0xF000u) | 850u);
     BK4819_WriteRegister(BK4819_REG_2B, (1u << 2) | 1u);
     BK4819_WriteRegister(BK4819_REG_58, (1u << 13) | (7u << 10) | (1u << 1) | 1u);
     BK4819_WriteRegister(BK4819_REG_72, (uint16_t)((1200u * 1353245u + (1u << 16)) >> 17));
@@ -462,7 +462,7 @@ static bool send_packet(uint8_t op, uint8_t arg, uint16_t id)
     BK4819_WriteRegister(BK4819_REG_59, reg59);
     BK4819_WriteRegister(BK4819_REG_70, 0);
     BK4819_WriteRegister(BK4819_REG_58, 0);
-    BK4819_WriteRegister(BK4819_REG_40, r40);
+    BK4819_WriteRegister((BK4819_REGISTER_t)0x40, r40);
     BK4819_WriteRegister(BK4819_REG_2B, r2b);
     BK4819_WriteRegister(BK4819_REG_51, r51);
     BK4819_WriteRegister(BK4819_REG_3F, r3f);
@@ -613,7 +613,7 @@ bool MDC1200_handle_key(KEY_Code_t key, bool pressed, bool held)
             edit_name[edit_pos] = cycle_char(edit_name[edit_pos], -1);
             edit_last_key = KEY_INVALID;
             gUpdateDisplay = true;
-        } else if (key >= KEY_0 && key <= KEY_9 && !held) {
+        } else if (key <= KEY_9 && !held) {
             keypad_letter(key);
             gUpdateDisplay = true;
         } else if (key == KEY_STAR && !held) {
