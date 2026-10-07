@@ -114,10 +114,8 @@ void RADIO_InitInfo(VFO_Info_t *pInfo, const uint8_t ChannelSave, const uint32_t
 	pInfo->pTX                      = &pInfo->freq_config_TX;
 	pInfo->Compander                = 0;  // off
 
-	if (ChannelSave == (FREQ_CHANNEL_FIRST + BAND2_108MHz))
-		pInfo->Modulation = MODULATION_AM;
-	else
-		pInfo->Modulation = MODULATION_FM;
+	// Air Radio is intentionally FM-only.
+	pInfo->Modulation = MODULATION_FM;
 
 	RADIO_ConfigureSquelchAndOutputPower(pInfo);
 }
@@ -221,9 +219,8 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
 			tmp = 0;
 		pVfo->TX_OFFSET_FREQUENCY_DIRECTION = tmp;
 		tmp = data[3] >> 4;
-		if (tmp >= MODULATION_UKNOWN)
-			tmp = MODULATION_FM;
-		pVfo->Modulation = tmp;
+		// Ignore legacy AM/USB values stored in EEPROM; Air Radio is FM-only.
+		pVfo->Modulation = MODULATION_FM;
 
 		tmp = data[6];
 		if (tmp >= STEP_N_ELEM)
@@ -825,7 +822,9 @@ void RADIO_SetModulation(ModulationMode_t modulation)
 			mod = BK4819_AF_FM;
 			break;
 		case MODULATION_AM:
-			mod = BK4819_AF_AM;
+			// AM removed from Air Radio; fall back to normal FM audio path.
+			mod = BK4819_AF_FM;
+			modulation = MODULATION_FM;
 			break;
 		case MODULATION_USB:
 			mod = BK4819_AF_BASEBAND2;
