@@ -571,8 +571,33 @@ static void MAIN_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 	}
 }
 
+static bool gAirRenameMode = false;
+static char gAirRename[11];
+static uint8_t gAirRenameLen = 0;
+
+static void AIR_RenameKey(KEY_Code_t key)
+{
+	static const char letters[10][4] = {" 0 ", "1", "ABC", "DEF", "GHI", "JKL", "MNO", "PQRS", "TUV", "WXYZ"};
+	if (key >= KEY_0 && key <= KEY_9 && gAirRenameLen < 10) {
+		// Simple radio-side naming: each numeric key inserts the first letter on that key.
+		const char *p = letters[key - KEY_0];
+		gAirRename[gAirRenameLen++] = p[0];
+		gAirRename[gAirRenameLen] = 0;
+		gUpdateDisplay = true;
+	}
+}
+
 static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
 {
+	// F + long STAR enters channel-name edit for the selected memory channel.
+	if (bKeyHeld && bKeyPressed && gWasFKeyPressed && IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+		gWasFKeyPressed = false;
+		gAirRenameMode = true;
+		gAirRenameLen = 0;
+		memset(gAirRename, 0, sizeof(gAirRename));
+		gBeepToPlay = BEEP_880HZ_200MS;
+		return;
+	}
 	if (gCurrentFunction == FUNCTION_TRANSMIT)
 		return;
 	
@@ -727,6 +752,27 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 
 void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
+	if (gAirRenameMode) {
+		if (bKeyPressed && !bKeyHeld && Key >= KEY_0 && Key <= KEY_9) {
+			AIR_RenameKey(Key);
+			return;
+		}
+		if (bKeyPressed && !bKeyHeld && Key == KEY_EXIT) {
+			if (gAirRenameLen > 0) gAirRename[--gAirRenameLen] = 0;
+			else gAirRenameMode = false;
+			gUpdateDisplay = true;
+			return;
+		}
+		if (bKeyPressed && !bKeyHeld && Key == KEY_MENU) {
+			SETTINGS_SaveChannelName(gTxVfo->CHANNEL_SAVE, gAirRename);
+			memcpy(gTxVfo->Name, gAirRename, MIN(sizeof(gTxVfo->Name) - 1, sizeof(gAirRename)));
+			gAirRenameMode = false;
+			gBeepToPlay = BEEP_880HZ_60MS_TRIPLE_BEEP;
+			gUpdateDisplay = true;
+			return;
+		}
+		return;
+	}
 #ifdef ENABLE_FMRADIO
 	if (gFmRadioMode && Key != KEY_PTT && Key != KEY_EXIT) {
 		if (!bKeyHeld && bKeyPressed)
