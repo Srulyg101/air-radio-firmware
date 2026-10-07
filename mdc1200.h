@@ -29,6 +29,7 @@ void MDC1200_open_log(void);
 
 bool MDC1200_is_overlay_active(void);
 bool MDC1200_send_call_alert(void);
+bool MDC1200_send_group_control(uint16_t group_id, bool open);
 bool MDC1200_handle_local_code(const char *code);
 
 const char *MDC1200_event_name(uint8_t op, uint8_t arg);
