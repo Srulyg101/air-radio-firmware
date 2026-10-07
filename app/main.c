@@ -84,9 +84,27 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
 	switch (Key) {
 		case KEY_0:
-			#ifdef ENABLE_FMRADIO
-				ACTION_FM();
-			#endif
+			// Air Radio quick frequency entry:
+			// Hold 0 (or F+0) from any main screen to jump into VFO/frequency mode.
+			// The normal digit handler then accepts six digits, e.g. 153710 -> 153.710 MHz.
+			if (!gEeprom.VFO_OPEN || gCssBackgroundScan) {
+				gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+				return;
+			}
+			if (!IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+				const uint8_t vfo = gEeprom.TX_VFO;
+				const FREQUENCY_Band_t band = FREQUENCY_GetBand(gTxVfo->pRX->Frequency);
+				gEeprom.ScreenChannel[vfo] = FREQ_CHANNEL_FIRST + band;
+				gEeprom.FreqChannel[vfo]   = FREQ_CHANNEL_FIRST + band;
+				gEeprom.VfoInfo[vfo].CHANNEL_SAVE = gEeprom.ScreenChannel[vfo];
+				SETTINGS_SaveVfoIndices();
+				RADIO_SelectVfos();
+				RADIO_ConfigureChannel(vfo, VFO_CONFIGURE_RELOAD);
+				RADIO_SetupRegisters(true);
+			}
+			gInputBoxIndex = 0;
+			gRequestDisplayScreen = DISPLAY_MAIN;
+			gUpdateDisplay = true;
 			break;
 
 		case KEY_1:
