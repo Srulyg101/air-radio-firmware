@@ -15,6 +15,7 @@
  */
 
 #include <string.h>
+#include "air_modes.h"
 
 #include "app/chFrScanner.h"
 #ifdef ENABLE_FMRADIO
@@ -36,6 +37,7 @@
 
 void UI_DisplayStatus()
 {
+	if (AIRMODES_IsShabbos()) return;
 	gUpdateStatus = false;
 	memset(gStatusLine, 0, sizeof(gStatusLine));
 
