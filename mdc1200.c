@@ -4,7 +4,7 @@
 #include "air_groups.h"
 #include "audio.h"
 #include "driver/bk4819.h"
-#include "driver/eeprom.h"
+#include "air_nv.h"
 #include "driver/st7565.h"
 #include "driver/system.h"
 #include "external/printf/printf.h"
@@ -15,7 +15,7 @@
 #include "ui/helper.h"
 #include "ui/ui.h"
 
-#define MDC_CONTACT_BASE 0x1D00u
+#define MDC_CONTACT_BASE 0u
 #define MDC_CONTACT_MAGIC 0xA5u
 
 typedef struct {
@@ -184,7 +184,7 @@ static unsigned int encode_packet(uint8_t *data, uint8_t op, uint8_t arg, uint16
 static bool contact_get(unsigned int slot, MDCContactRecord *rec)
 {
     if (slot >= MDC1200_MAX_CONTACTS || rec == 0) return false;
-    EEPROM_ReadBuffer(MDC_CONTACT_BASE + slot * 16u, rec, sizeof(*rec));
+    AIRNV_Read(MDC_CONTACT_BASE + slot * 16u, rec, sizeof(*rec));
     if (rec->magic != MDC_CONTACT_MAGIC || rec->id == 0 || rec->id == 0xFFFFu) return false;
     rec->name[9] = 0;
     return true;
