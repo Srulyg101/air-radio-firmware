@@ -89,7 +89,7 @@ jobs:
       - name: Upload firmware + report
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ github.ref_name }}-${{ github.sha }}
+          name: firmware-air-radio-${{ github.sha }}
           path: |
             firmware.bin
             firmware.packed.bin
@@ -116,7 +116,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: firmware-${{ github.ref_name }}-${{ github.sha }}
+          name: firmware-air-radio-${{ github.sha }}
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
