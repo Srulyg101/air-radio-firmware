@@ -70,7 +70,7 @@ void GUI_DisplayScreen(void)
 	if (AIRMODES_IsShabbos())
 		return;
 #ifdef ENABLE_MDC1200
-	if (MDC1200_render())
+	if (gScreenToDisplay == DISPLAY_MAIN && MDC1200_render())
 		return;
 #endif
 	if (gScreenToDisplay != DISPLAY_INVALID) {

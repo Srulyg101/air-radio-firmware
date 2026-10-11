@@ -2,10 +2,10 @@ name: Build firmware
 
 on:
   push:
-    branches: [air-radio, air-radio-lean, feature/mdc1200-reader]
+    branches: [air-radio, air-radio-lean, feature/mdc1200-reader, audit/mdc-preflash]
     tags: ['v*']
   pull_request:
-    branches: [air-radio, air-radio-lean, feature/mdc1200-reader]
+    branches: [air-radio, air-radio-lean, feature/mdc1200-reader, audit/mdc-preflash]
   workflow_dispatch:
 
 # Least privilege by default; the release job elevates only for tag pushes.
@@ -40,6 +40,9 @@ jobs:
           python -m pip install --quiet crcmod
           python --version
           arm-none-eabi-gcc --version | head -1
+
+      - name: Host MDC and EEPROM regression tests
+        run: python tests/preflash.py
 
       - name: Build (warnings are errors via -Werror in Makefile)
         shell: bash

@@ -1531,7 +1531,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
 	AIRMODES_ObserveKey(Key, bKeyPressed, bKeyHeld);
 #ifdef ENABLE_MDC1200
-	if (Key != KEY_PTT && MDC1200_handle_key(Key, bKeyPressed, bKeyHeld)) {
+	if (gScreenToDisplay == DISPLAY_MAIN && Key != KEY_PTT && MDC1200_handle_key(Key, bKeyPressed, bKeyHeld)) {
 		if (gBeepToPlay != BEEP_NONE) {
 			AUDIO_PlayBeep(gBeepToPlay);
 			gBeepToPlay = BEEP_NONE;
