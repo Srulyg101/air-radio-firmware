@@ -46,6 +46,7 @@ static bool log_open;
 static bool edit_mode;
 static char edit_name[11];
 static uint8_t edit_pos;
+static uint16_t edit_id;
 static KEY_Code_t edit_last_key = KEY_INVALID;
 
 static uint16_t last_id;
@@ -186,7 +187,7 @@ static bool contact_get(unsigned int slot, MDCContactRecord *rec)
     if (slot >= MDC1200_MAX_CONTACTS || rec == 0) return false;
     AIRNV_Read(MDC_CONTACT_BASE + slot * 16u, rec, sizeof(*rec));
     if (rec->magic != MDC_CONTACT_MAGIC || rec->id == 0 || rec->id == 0xFFFFu) return false;
-    rec->name[9] = 0;
+    // The on-disk name has ten characters; contact_find adds the terminator.
     return true;
 }
 
@@ -264,7 +265,7 @@ static void record_event(uint16_t id, uint8_t op, uint8_t arg)
     if (id == last_id && op == last_op && arg == last_arg && (uint16_t)(tick500 - last_tick) <= 3u) {
         mdc1200_rx_ready_tick_500ms = 12;
         log_open = true;
-        history_selected = 0;
+        if (!edit_mode) history_selected = 0;
         gUpdateDisplay = true;
         return;
     }
@@ -283,7 +284,7 @@ static void record_event(uint16_t id, uint8_t op, uint8_t arg)
     e->tick = tick500;
     history_head = (history_head + 1u) % MDC1200_HISTORY_SIZE;
     if (history_count < MDC1200_HISTORY_SIZE) history_count++;
-    history_selected = 0;
+    if (!edit_mode) history_selected = 0;
     log_open = true;
     mdc1200_rx_ready_tick_500ms = 12;
     gUpdateDisplay = true;
@@ -308,7 +309,7 @@ static void record_event(uint16_t id, uint8_t op, uint8_t arg)
         gBeepToPlay = BEEP_MDC_REMOTE_MONITOR;
 }
 
-static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *op, uint8_t *arg, uint16_t *id)
+static bool decode_rx_polarity(const uint8_t *buffer, unsigned int size, bool complement, uint8_t *op, uint8_t *arg, uint16_t *id)
 {
     struct {
         uint8_t bit, xor_bit;
@@ -320,7 +321,7 @@ static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *o
     memset(&r, 0, sizeof(r));
 
     for (unsigned int index = 0; index < size; index++) {
-        const uint8_t rb = buffer[index];
+        const uint8_t rb = buffer[index] ^ (complement ? 0xFFu : 0u);
         for (int bit = 7; bit >= 0; bit--) {
             r.bit = (rb >> bit) & 1u;
             r.xor_bit = (r.xor_bit ^ r.bit) & 1u;
@@ -351,7 +352,7 @@ static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *o
             if (r.bit_count < 8) continue;
             r.bit_count = 0;
             if (r.data_index < sizeof(r.data))
-                r.data[r.data_index++] = r.shift & 0xFFu;
+                r.data[r.data_index++] = (r.shift & 0xFFu) ^ (r.inverted ? 0xFFu : 0u);
             if (r.data_index < MDC1200_FEC_K * 2) continue;
 
             if (!decode_data(r.data)) return false;
@@ -362,6 +363,14 @@ static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *o
         }
     }
     return false;
+}
+
+static bool process_rx_data(const uint8_t *buffer, unsigned int size, uint8_t *op, uint8_t *arg, uint16_t *id)
+{
+    // BK4819 sync polarity and differential mark/space polarity are separate.
+    // Accept both, but never report a packet unless its CRC is valid.
+    return decode_rx_polarity(buffer, size, false, op, arg, id) ||
+           decode_rx_polarity(buffer, size, true, op, arg, id);
 }
 
 void MDC1200_enable_rx(bool enable)
@@ -558,6 +567,7 @@ static void begin_edit(void)
 {
     MDC1200_Event *e = selected_event();
     if (!e) return;
+    edit_id = e->unit_id;
     char found[11];
     memset(edit_name, ' ', 10);
     edit_name[10] = 0;
@@ -575,14 +585,12 @@ static void begin_edit(void)
 
 static void save_edit(void)
 {
-    MDC1200_Event *e = selected_event();
-    if (!e) { edit_mode = false; return; }
     char name[11];
     memcpy(name, edit_name, 10);
     name[10] = 0;
     for (int i = 9; i >= 0 && name[i] == ' '; i--) name[i] = 0;
     if (name[0] == 0) strcpy(name, "UNIT");
-    contact_save(e->unit_id, name);
+    contact_save(edit_id, name);
     edit_mode = false;
     edit_last_key = KEY_INVALID;
     mdc1200_rx_ready_tick_500ms = 8;
@@ -619,6 +627,7 @@ static void keypad_letter(KEY_Code_t key)
 
 bool MDC1200_handle_key(KEY_Code_t key, bool pressed, bool held)
 {
+    if (key == KEY_PTT) return false;
     if (!MDC1200_is_overlay_active()) return false;
 
     if (!pressed) return true;
@@ -629,6 +638,7 @@ bool MDC1200_handle_key(KEY_Code_t key, bool pressed, bool held)
             if (edit_pos < 9) edit_pos++;
             else save_edit();
             edit_last_key = KEY_INVALID;
+            gUpdateDisplay = true;
         } else if (key == KEY_EXIT) {
             edit_mode = false;
             edit_last_key = KEY_INVALID;
@@ -688,7 +698,7 @@ bool MDC1200_render(void)
     char line[24];
 
     if (edit_mode) {
-        sprintf(line, "MDC %04X NAME", e->unit_id);
+        sprintf(line, "MDC %04X NAME", edit_id);
         UI_PrintStringSmallBold(line, 2, 0, 0);
         UI_PrintString(edit_name, 2, 0, 2, 8);
         memset(line, ' ', 10);

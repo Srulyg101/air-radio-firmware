@@ -101,7 +101,8 @@ void AIRMODES_ObserveKey(KEY_Code_t key, bool pressed, bool held)
 {
     if (key != KEY_UP) return;
     if (pressed) up_pressed = true;
-    else if (!held) up_pressed = false;
+    else up_pressed = false;
+    (void)held;
 }
 
 void AIRMODES_BeforePtt(void)
